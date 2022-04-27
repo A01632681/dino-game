@@ -1,3 +1,4 @@
+from re import S
 import pygame
 import os
 import random
@@ -39,7 +40,6 @@ class Dinosaur:
         self.duck_img = DUCKING
         self.run_img = RUNNING
         self.jump_img = JUMPING
-
         self.dino_duck = False
         self.dino_run = True
         self.dino_jump = False
@@ -51,6 +51,7 @@ class Dinosaur:
         self.dino_rect.x = self.X_POS
         self.dino_rect.y = self.Y_POS
 
+        self.hitbox = self.dino_rect.inflate(-40, -20)
     def update(self, userInput):
         if self.dino_duck:
             self.duck()
@@ -80,6 +81,9 @@ class Dinosaur:
         self.dino_rect = self.image.get_rect()
         self.dino_rect.x = self.X_POS
         self.dino_rect.y = self.Y_POS_DUCK
+        self.hitbox = self.image.get_rect()
+        self.hitbox.x = self.X_POS
+        self.hitbox.y = self.Y_POS_DUCK        
         self.step_index += 1
 
     def run(self):
@@ -87,12 +91,16 @@ class Dinosaur:
         self.dino_rect = self.image.get_rect()
         self.dino_rect.x = self.X_POS
         self.dino_rect.y = self.Y_POS
+        self.hitbox = self.image.get_rect()
+        self.hitbox.x = self.X_POS
+        self.hitbox.y = self.Y_POS        
         self.step_index += 1
 
     def jump(self):
         self.image = self.jump_img
         if self.dino_jump:
             self.dino_rect.y -= self.jump_vel * 4
+            self.hitbox.y -= self.jump_vel * 4
             self.jump_vel -= 0.8
         if self.jump_vel < - self.JUMP_VEL:
             self.dino_jump = False
@@ -100,6 +108,7 @@ class Dinosaur:
 
     def draw(self, SCREEN):
         SCREEN.blit(self.image, (self.dino_rect.x, self.dino_rect.y))
+        pygame.draw.rect(SCREEN, (0, 0, 250), self.hitbox, 2)
 
 class Cloud:
     def __init__(self):
@@ -123,15 +132,20 @@ class Obstacle:
         self.type = type
         self.rect = self.image[self.type].get_rect()
         self.rect.x = SCREEN_WIDTH
+        
+        self.hitbox = self.image[self.type].get_rect()
+
         self.collided = False
 
     def update(self):
         self.rect.x -= game_speed
+        self.hitbox.x = self.rect.x + 40
         if self.rect.x < -self.rect.width:
             obstacles.pop()
 
     def draw(self, SCREEN):
         SCREEN.blit(self.image[self.type], self.rect)
+        pygame.draw.rect(SCREEN, (250, 30, 0), self.hitbox, 2)
 
 
 
@@ -140,24 +154,28 @@ class SmallCactus(Obstacle):
         self.type = random.randint(0, 2)
         super().__init__(image, self.type)
         self.rect.y = 325
+        self.hitbox.y = 325
 
 class LargeCactus(Obstacle):
     def __init__(self, image):
         self.type = random.randint(0, 2)
         super().__init__(image, self.type)
         self.rect.y = 300
+        self.hitbox.y = 300
 
 class Bird(Obstacle):
     def __init__(self, image):
         self.type = 0
         super().__init__(image, self.type)
         self.rect.y = 250
+        self.hitbox.y = 250
         self.index = 0
 
     def draw(self, SCREEN):
         if self.index >= 9:
             self.index = 0
         SCREEN.blit(self.image[self.index//5], self.rect)
+        pygame.draw.rect(SCREEN, (250, 30, 0), self.hitbox, 2)
         self.index += 1
 
 def main():
@@ -172,7 +190,7 @@ def main():
     points = 0
     font = pygame.font.Font('freesansbold.ttf', 20)
     obstacles = []
-    lifes = 4
+    lifes = 2
     start_time = pygame.time.get_ticks()
 
     def score():
@@ -241,7 +259,8 @@ def main():
         for obstacle in obstacles:
             obstacle.draw(SCREEN)
             obstacle.update()
-            if player.dino_rect.colliderect(obstacle.rect):
+
+            if pygame.Rect.colliderect(player.hitbox, obstacle.hitbox):
                 if(not obstacle.collided):
                     obstacle.collided = True
                     lifes -= 1
@@ -299,4 +318,4 @@ def menu(lifes):
                     main()
 
 
-menu(4)
+menu(2)
