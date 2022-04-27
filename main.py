@@ -123,6 +123,7 @@ class Obstacle:
         self.type = type
         self.rect = self.image[self.type].get_rect()
         self.rect.x = SCREEN_WIDTH
+        self.collided = False
 
     def update(self):
         self.rect.x -= game_speed
@@ -131,6 +132,7 @@ class Obstacle:
 
     def draw(self, SCREEN):
         SCREEN.blit(self.image[self.type], self.rect)
+
 
 
 class SmallCactus(Obstacle):
@@ -158,7 +160,6 @@ class Bird(Obstacle):
         SCREEN.blit(self.image[self.index//5], self.rect)
         self.index += 1
 
-
 def main():
     global game_speed, x_pos_bg, y_pos_bg, points, obstacles, tiempo, start_time
     run = True
@@ -171,7 +172,7 @@ def main():
     points = 0
     font = pygame.font.Font('freesansbold.ttf', 20)
     obstacles = []
-    death_count = 0
+    lifes = 4
     start_time = pygame.time.get_ticks()
 
     def score():
@@ -200,7 +201,6 @@ def main():
         SCREEN.blit(text1, text1Rect)
 
     def vidas():
-        lifes = death_count
         text1 = font.render("Lifes: " + str(lifes), True, (0, 0, 0))
         text1Rect = text1.get_rect()
         text1Rect.center = (1000, 100)
@@ -242,10 +242,12 @@ def main():
             obstacle.draw(SCREEN)
             obstacle.update()
             if player.dino_rect.colliderect(obstacle.rect):
-                death_count += 1
-            if death_count >= 5:
+                if(not obstacle.collided):
+                    obstacle.collided = True
+                    lifes -= 1
+            if lifes <= 0:
                 pygame.time.delay(500)
-                menu(death_count)
+                menu(0)
 
         background()
 
@@ -260,7 +262,7 @@ def main():
         pygame.display.update()
 
 
-def menu(death_count):
+def menu(lifes):
     global points, contador
     contador = [10,9,8,7,6,5,4,3,2,1,0]
     run = True
@@ -268,9 +270,9 @@ def menu(death_count):
         SCREEN.fill((255, 255, 255))
         font = pygame.font.Font('freesansbold.ttf', 30)
 
-        if death_count == 0:
+        if lifes > 0:
             text = font.render("Press any Key to Start", True, (0, 0, 0))
-        elif death_count > 4:
+        elif lifes <= 0:
             text = font.render("Press any Key to Restart", True, (0, 0, 0))
             score = font.render("Your Score: " + str(points), True, (0, 0, 0))
             scoreRect = score.get_rect()
@@ -297,4 +299,4 @@ def menu(death_count):
                     main()
 
 
-menu(death_count=0)
+menu(4)
